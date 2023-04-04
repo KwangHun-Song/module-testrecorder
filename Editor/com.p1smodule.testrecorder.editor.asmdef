@@ -1,0 +1,9 @@
+{
+  "name": "com.p1smodule.testrecorder.editor",
+  "dependencies": [
+    "com.p1smodule.testrecorder"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ]
+}

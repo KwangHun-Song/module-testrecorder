@@ -1,0 +1,20 @@
+{
+    "name": "com.p1smodule.testrecorder",
+    "rootNamespace": "",
+    "references": [
+        "com.p1smodule.utility",
+        "UniTask",
+        "com.p1splatform.core",
+        "com.p1splatform.diagnostics",
+        "com.p1smodule.hotkeyview"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
