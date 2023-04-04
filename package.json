@@ -1,0 +1,14 @@
+{
+  "name": "com.p1smodule.testrecorder",
+  "displayName": "P1SModule.TestRecorder",
+  "version": "0.0.1",
+  "unity": "2020.3",
+  "description": "",
+  "dependencies": {},
+  "keywords": [],
+  "category": "Module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://gitlab.bitmango.com/p1smodule/testRecorder.git"
+  }
+}
