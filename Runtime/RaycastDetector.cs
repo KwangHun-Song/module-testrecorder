@@ -10,18 +10,14 @@ namespace P1SModule.TestRecorder {
         }
         
         private void Update() {
-            if (Input.GetMouseButtonDown(0)) {
-                CheckAndSendListener(InputType.Down);
-            }
-
             if (Input.GetMouseButtonUp(0)) {
-                CheckAndSendListener(InputType.Up);
+                CheckAndSendListener();
             }
             
-            void CheckAndSendListener(InputType inputType) {
-                var hitGo = /*GetRaycastByGraphic() ?? */GetRaycastByCollider();
+            void CheckAndSendListener() {
+                var hitGo = GetRaycastByGraphic() ?? GetRaycastByCollider();
                 if (hitGo != null) {
-                    Listener.GetHit(hitGo, inputType);
+                    Listener.GetHit(hitGo);
                 }
             }
 

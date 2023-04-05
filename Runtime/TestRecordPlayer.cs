@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -6,10 +7,9 @@ using Newtonsoft.Json;
 using P1SPlatform.Diagnostics;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using Object = UnityEngine.Object;
 
 namespace P1SModule.TestRecorder {
-    public enum ReportResult { Pass, Fail }
-    
     public class TestRecordPlayer {
         public bool IsPlaying { get; set; }
         
@@ -22,30 +22,47 @@ namespace P1SModule.TestRecorder {
             Listener = listener;
         }
         
-        public virtual async UniTask<ReportResult> Begin() {
+        public virtual async UniTask<TestReport> Begin() {
             if (IsPlaying) {
                 Debugger.Assert(false, "Already on playing");
-                return ReportResult.Fail;
+                return TestReport.FailNotValidStart;
             }
             
             IsPlaying = true;
             tokenSource = new CancellationTokenSource();
             InitInputSystem();
+            
+            Listener?.OnStart();
 
             // 레코드 파일을 읽는다.
             var records = GetTestRecord();
 
             // 순서대로 실행한다.
             foreach (var record in records) {
-                await UniTask.Delay((int)(record.second * 1000));
-                await InvokeEventAsync(record);
+                await UniTask.Delay((int)(record.second * 1000), cancellationToken:tokenSource.Token);
+                if (string.IsNullOrEmpty(record.gameObjectPath) == false) {
+                    if (await InvokeEventAsync(record, tokenSource.Token) == false) {
+                        return TestReport.FailToFindGameObject;
+                    }
+                }
+
+                // Stop이 불렸으면 실행을 멈추고 Aborted를 반환한다.
+                if (tokenSource.IsCancellationRequested) {
+                    Listener?.OnAbort();
+                    return TestReport.Aborted;
+                }
                 
-                // 이벤트를 등록했으면 중간에 결과를 확인하고 테스트를 멈출 수 있다.
-                if (Listener.TestOnPlay(record) == ReportResult.Fail) {
-                    return ReportResult.Fail;
+                // 중간에 결과를 확인하고 테스트를 멈출 수 있다.
+                var intermediateResult = Listener.TestOnPlay(record);
+                if (intermediateResult.result != ReportResult.Pass) {
+                    return intermediateResult;
                 }
             }
 
+            Stop();
+            
+            Listener?.OnEnd();
+            
             // 등록한 이벤트를 사용해 리포트 결과를 정할 수 있다.
             return Listener.TestOnEnd();
         }
@@ -72,9 +89,17 @@ namespace P1SModule.TestRecorder {
             return JsonConvert.DeserializeObject<List<TestRecord>>(recordsAssets.text);
         }
 
-        protected virtual async UniTask InvokeEventAsync(TestRecord record) {
-            var position = Camera.main.WorldToViewportPoint(GameObject.Find(record.gameObjectPath).transform.position);
-            InputModule.TouchAt(position.x, position.y);
+        protected virtual async UniTask<bool> InvokeEventAsync(TestRecord record, CancellationToken tokenSourceToken) {
+            try {
+                var gameObject = GameObject.Find(record.gameObjectPath);
+                var position = Camera.main.WorldToViewportPoint(gameObject.transform.position);
+                InputModule.TouchAt(position.x, position.y);
+            } catch (Exception _) {
+                ColoredDebug.Log($"게임오브젝트를 찾는 데 실패했습니다. {record.gameObjectPath}", DebugColor.Red);
+                return false;
+            }
+
+            return true;
         }
     }
 }

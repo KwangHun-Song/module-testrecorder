@@ -1,12 +1,17 @@
 using UnityEngine;
 
 namespace P1SModule.TestRecorder {
-    /// <summary>
-    /// 레코드 등록시 로그만 남겨주는 이벤트
-    /// </summary>
     public class DefaultWriterEvent : IWriterEvent {
+        public void OnStart() {
+            ColoredDebug.Log($"### Start Recording", DebugColor.Orange);
+        }
+
+        public void OnEnd() {
+            ColoredDebug.Log($"### End Recording", DebugColor.Orange);
+        }
+        
         public string OnClick(GameObject gameObject) {
-            ColoredDebug.Log($"Click {gameObject.GetFullPath()}");
+            ColoredDebug.Log($"### Click {gameObject.GetFullPath()}, DebugColor.Orange");
             return null;
         }
     }
