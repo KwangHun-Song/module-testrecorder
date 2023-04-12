@@ -19,7 +19,7 @@ namespace P1SModule.TestRecorder {
 
         public TestReport TestOnPlay(TestRecord testRecord) {
             // knot을 사용하는 예시
-            if (testRecord.customParam.StartsWith("knot")) {
+            if (testRecord.customParam != null && testRecord.customParam.StartsWith("knot")) {
                 if (int.TryParse(testRecord.customParam.Replace("knot", ""), out var knotIndex)) {
                     return CheckKnot(knotIndex);
                 }
