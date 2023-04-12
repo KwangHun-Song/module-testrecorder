@@ -1,7 +1,7 @@
 {
   "name": "com.p1smodule.testrecorder",
   "displayName": "P1SModule.TestRecorder",
-  "version": "0.0.1",
+  "version": "0.0.2-initial.1",
   "unity": "2020.3",
   "description": "",
   "dependencies": {},
