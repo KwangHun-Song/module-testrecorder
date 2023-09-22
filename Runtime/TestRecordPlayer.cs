@@ -83,13 +83,13 @@ namespace P1SModule.TestRecorder {
 
         protected virtual void DisposeInputSystem() { }
 
-        protected virtual IEnumerable<TestRecord> GetTestRecord() {
+        protected virtual IEnumerable<TestRecordStep> GetTestRecord() {
             var recordsAssets = Resources.Load("TestRecords") as TextAsset;
-            if (recordsAssets == null) return Enumerable.Empty<TestRecord>();
-            return JsonConvert.DeserializeObject<List<TestRecord>>(recordsAssets.text);
+            if (recordsAssets == null) return Enumerable.Empty<TestRecordStep>();
+            return JsonConvert.DeserializeObject<List<TestRecordStep>>(recordsAssets.text);
         }
 
-        protected virtual async UniTask<bool> InvokeEventAsync(TestRecord record, CancellationToken tokenSourceToken) {
+        protected virtual async UniTask<bool> InvokeEventAsync(TestRecordStep record, CancellationToken tokenSourceToken) {
             try {
                 var gameObject = GameObject.Find(record.gameObjectPath);
                 var position = Camera.main.WorldToViewportPoint(gameObject.transform.position);

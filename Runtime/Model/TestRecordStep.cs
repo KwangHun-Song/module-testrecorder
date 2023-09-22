@@ -1,5 +1,5 @@
 namespace P1SModule.TestRecorder {
-    public class TestRecord {
+    public class TestRecordStep {
         /// <summary>
         /// 이전 기록으로부터 몇 초 후 실행되는지를 체크합니다.
         /// </summary>
@@ -9,8 +9,8 @@ namespace P1SModule.TestRecorder {
         /// </summary>
         public string gameObjectPath;
         /// <summary>
-        /// 임의로 지정한 파라미터를 전송한다.
+        /// 미리 지정한 함수 이름
         /// </summary>
-        public string customParam;
+        public string preDesignedFunc;
     }
 }

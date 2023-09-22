@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json;
-using P1SModule.HotKeyView;
 using P1SPlatform.Diagnostics;
 using UnityEngine;
 
@@ -12,51 +11,71 @@ namespace P1SModule.TestRecorder {
     /// </summary>
     public class TestRecordWriter : IRaycastDetectorListener {
         public bool IsRecording { get; private set; }
+        public string SavePath { get; }
+        public RaycastDetector RaycastDetector { get; }
+        public string CurrentTestName { get; private set; }
+        public List<TestRecordStep> Records { get; } = new List<TestRecordStep>();
+        public IWriterEvent Listener { get; }
+        private float LastInputSecond { get; set; }
 
-        protected virtual string SavePath { get; } = "Assets/Resources/TestRecords.json";
-        protected virtual RaycastDetector RaycastDetector { get; set; }
-        protected virtual float LastInputSecond { get; set; }
-        protected virtual List<TestRecord> Records { get; } = new List<TestRecord>();
-        protected IWriterEvent Listener { get; }
-
-        public TestRecordWriter(IWriterEvent listener = null) {
-            Listener = listener;
+        public TestRecordWriter(RaycastDetector raycastDetector, string savePath, IWriterEvent listener = null) {
+            RaycastDetector = raycastDetector;
+            RaycastDetector.Listeners.Add(this);
+            SavePath = savePath;
+            Listener = listener ?? new DefaultWriterEvent();
         }
 
-        public virtual void Begin() {
+        ~TestRecordWriter() {
+            RaycastDetector.Listeners.Remove(this);
+        }
+
+        public void Begin(string testName) {
             if (IsRecording) {
                 Debugger.Assert(false, "Already on recording");
                 return;
             }
-            
+
+            CurrentTestName = testName;
             IsRecording = true;
             LastInputSecond = Time.time; // 시간 기록을 초기화한다.
             Records.Clear();
             
-            // 레이캐스트 디텍터를 만들고 활성화한다. 상속한 IRaycastDetectorListener 구현을 통해 이벤트를 받는다.
-            RaycastDetector = CreateRaycastDetector();
-            
-            HotKeyHelper.AddKeyBindings(this);
             Listener?.OnStart();
         }
 
-        public virtual void Stop() {
+        public TestRecord Stop() {
             File.WriteAllText(SavePath, JsonConvert.SerializeObject(Records, Formatting.Indented));
             
             IsRecording = false;
-            Object.DestroyImmediate(RaycastDetector);
-            LastInputSecond = default;
-            Records.Clear();
-            
-            HotKeyHelper.RemoveKeyBindings(this);
             Listener?.OnEnd();
+
+            return new TestRecord {
+                testName = CurrentTestName,
+                steps = Records,
+            };
         }
 
-        protected virtual RaycastDetector CreateRaycastDetector() {
-            var raycastDetector = new GameObject().AddComponent<RaycastDetector>();
-            Object.DontDestroyOnLoad(raycastDetector.transform);
-            raycastDetector.Init(this);
-            return raycastDetector;
+        // protected virtual RaycastDetector CreateRaycastDetector() {
+        //     var raycastDetector = new GameObject().AddComponent<RaycastDetector>();
+        //     Object.DontDestroyOnLoad(raycastDetector.transform);
+        //     raycastDetector.Init(this);
+        //     return raycastDetector;
+        // }
+
+        public void AddPreDesignedFunc(string funcName) {
+            var time = GetElapsedTimeAndRenew();
+            ColoredDebug.Log($"### {funcName}이 기록되었습니다.", DebugColor.White);
+            Records.Add(new TestRecordStep {
+                second = time,
+                preDesignedFunc = funcName
+            });
+        }
+        
+        // 이전 이벤트로부터 시간을 계산하고, 마지막 이벤트 시간을 갱신한다.
+        protected virtual float GetElapsedTimeAndRenew() {
+            var elapsed = Time.time - LastInputSecond;
+            LastInputSecond = Time.time;
+            return elapsed;
         }
 
         #region IRaycastDetectorListener
@@ -69,33 +88,10 @@ namespace P1SModule.TestRecorder {
             var path = gameObject.GetFullPath();
             var customParam = Listener?.OnClick(gameObject);
             
-            Records.Add(new TestRecord {
+            Records.Add(new TestRecordStep {
                 second = time,
                 gameObjectPath = path,
-                customParam = customParam
-            });
-        }
-        
-        // 이전 이벤트로부터 시간을 계산하고, 마지막 이벤트 시간을 갱신한다.
-        protected virtual float GetElapsedTimeAndRenew() {
-            var elapsed = Time.time - LastInputSecond;
-            LastInputSecond = Time.time;
-            return elapsed;
-        }
-
-        #endregion
-
-        #region 핫키로 Knot을 등록하는 기능
-
-        private int knotIndex = 0;
-        [HotKey("Knot 등록", KeyCode.K)]
-        public void AddKnot() {
-            var time = GetElapsedTimeAndRenew();
-            var knotName = $"knot{knotIndex++}";
-            ColoredDebug.Log($"### 매듭 {knotName}이 기록되었습니다.", DebugColor.White);
-            Records.Add(new TestRecord {
-                second = time,
-                customParam = knotName
+                preDesignedFunc = customParam
             });
         }
 

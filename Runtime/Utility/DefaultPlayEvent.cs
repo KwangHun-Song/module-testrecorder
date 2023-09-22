@@ -17,10 +17,10 @@ namespace P1SModule.TestRecorder {
 
         public TestReport TestOnEnd() => TestReport.Pass;
 
-        public TestReport TestOnPlay(TestRecord testRecord) {
+        public TestReport TestOnPlay(TestRecordStep testRecord) {
             // knot을 사용하는 예시
-            if (testRecord.customParam != null && testRecord.customParam.StartsWith("knot")) {
-                if (int.TryParse(testRecord.customParam.Replace("knot", ""), out var knotIndex)) {
+            if (testRecord.preDesignedFunc != null && testRecord.preDesignedFunc.StartsWith("knot")) {
+                if (int.TryParse(testRecord.preDesignedFunc.Replace("knot", ""), out var knotIndex)) {
                     return CheckKnot(knotIndex);
                 }
             }

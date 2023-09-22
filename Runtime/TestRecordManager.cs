@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace P1SModule.TestRecorder {
     public static class TestRecordManager {
-        public static TestRecordWriter Writer { get; private set; } = new TestRecordWriter(new DefaultWriterEvent());
+        public static TestRecordWriter Writer { get; private set; } = new TestRecordWriter(null, null, new DefaultWriterEvent());
         public static TestRecordPlayer Player { get; private set; } = new TestRecordPlayer(new DefaultPlayEvent());
 
         /// <summary>
@@ -18,7 +18,7 @@ namespace P1SModule.TestRecorder {
         [GlobalHotKey("녹화 시작", KeyCode.F5)]
         public static void StartRecord() {
             if (Player.IsPlaying) Player.Stop();
-            Writer.Begin();
+            Writer.Begin("");
         }
 
         [GlobalHotKey("녹화 종료", KeyCode.F6)]
