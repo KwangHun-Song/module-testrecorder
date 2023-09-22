@@ -5,6 +5,12 @@ using UnityEngine.EventSystems;
 namespace P1SModule.TestRecorder {
     public class RaycastDetector : MonoBehaviour {
         public List<IRaycastDetectorListener> Listeners { get; } = new List<IRaycastDetectorListener>();
+
+        public static RaycastDetector CreateOne() {
+            var raycastDetector = new GameObject(nameof(RaycastDetector)).AddComponent<RaycastDetector>();
+            DontDestroyOnLoad(raycastDetector);
+            return raycastDetector;
+        }
         
         private void Update() {
             if (Input.GetMouseButtonUp(0)) {

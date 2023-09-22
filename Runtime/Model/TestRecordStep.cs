@@ -1,4 +1,7 @@
+using System;
+
 namespace P1SModule.TestRecorder {
+    [Serializable]
     public class TestRecordStep {
         /// <summary>
         /// 이전 기록으로부터 몇 초 후 실행되는지를 체크합니다.

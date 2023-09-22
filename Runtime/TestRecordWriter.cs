@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
+using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using Newtonsoft.Json;
 using P1SPlatform.Diagnostics;
 using UnityEngine;
@@ -11,17 +13,16 @@ namespace P1SModule.TestRecorder {
     /// </summary>
     public class TestRecordWriter : IRaycastDetectorListener {
         public bool IsRecording { get; private set; }
-        public string SavePath { get; }
         public RaycastDetector RaycastDetector { get; }
-        public string CurrentTestName { get; private set; }
         public List<TestRecordStep> Records { get; } = new List<TestRecordStep>();
         public IWriterEvent Listener { get; }
+        
+        private UniTaskCompletionSource<List<TestRecordStep>> CompletionSource { get; set; }
         private float LastInputSecond { get; set; }
 
-        public TestRecordWriter(RaycastDetector raycastDetector, string savePath, IWriterEvent listener = null) {
+        public TestRecordWriter([NotNull] RaycastDetector raycastDetector, IWriterEvent listener = null) {
             RaycastDetector = raycastDetector;
             RaycastDetector.Listeners.Add(this);
-            SavePath = savePath;
             Listener = listener ?? new DefaultWriterEvent();
         }
 
@@ -29,38 +30,30 @@ namespace P1SModule.TestRecorder {
             RaycastDetector.Listeners.Remove(this);
         }
 
-        public void Begin(string testName) {
+        public void Begin() {
             if (IsRecording) {
                 Debugger.Assert(false, "Already on recording");
                 return;
             }
 
-            CurrentTestName = testName;
             IsRecording = true;
             LastInputSecond = Time.time; // 시간 기록을 초기화한다.
             Records.Clear();
             
             Listener?.OnStart();
+            CompletionSource = new UniTaskCompletionSource<List<TestRecordStep>>();
         }
 
-        public TestRecord Stop() {
-            File.WriteAllText(SavePath, JsonConvert.SerializeObject(Records, Formatting.Indented));
-            
+        public UniTask WaitUntilTestEnd() => CompletionSource?.Task ?? UniTask.CompletedTask;
+
+        public List<TestRecordStep> Stop() {
+            if (IsRecording == false) return null;
             IsRecording = false;
             Listener?.OnEnd();
 
-            return new TestRecord {
-                testName = CurrentTestName,
-                steps = Records,
-            };
+            CompletionSource?.TrySetResult(Records);
+            return Records;
         }
-
-        // protected virtual RaycastDetector CreateRaycastDetector() {
-        //     var raycastDetector = new GameObject().AddComponent<RaycastDetector>();
-        //     Object.DontDestroyOnLoad(raycastDetector.transform);
-        //     raycastDetector.Init(this);
-        //     return raycastDetector;
-        // }
 
         public void AddPreDesignedFunc(string funcName) {
             var time = GetElapsedTimeAndRenew();
