@@ -9,12 +9,12 @@ using UnityEngine;
 
 namespace P1SModule.TestRecorder.Editor {
     public class TestRecordWriterEditor : EditorWindow {
-        private static RaycastDetector raycastDetector;
-        private static TestRecordWriter writer;
+        private RaycastDetector raycastDetector;
+        private TestRecordWriter writer;
+        private List<(PreDesignedFuncAttribute funcAttr, MethodInfo method)> preDesignedFuncs;
         
         private string savePath = "Assets/Resources/TestRecord";
-        private static string testName;
-        private List<(PreDesignedFuncAttribute funcAttr, MethodInfo method)> preDesignedFuncs;
+        private string testName;
 
         private void OnGUI() {
             if (Application.isPlaying == false) {
@@ -27,27 +27,18 @@ namespace P1SModule.TestRecorder.Editor {
             
             EditorGUILayout.Space();
 
-            if (writer is not { IsRecording: true } && !string.IsNullOrEmpty(testName)) {
-                if (GUILayout.Button("기록 시작")) {
-                    if (!raycastDetector) raycastDetector = RaycastDetector.CreateOne();
-                    writer = new TestRecordWriter(raycastDetector);
-                    writer.Begin();
+            if (writer is not { IsRecording: true }) {
+                if (string.IsNullOrEmpty(testName)) {
+                    EditorGUILayout.LabelField("테스트 이름을 기록해주세요.");
+                    return;
                 }
 
+                DrawNotRecording();
                 return;
             }
 
             if (GUILayout.Button("기록 종료")) {
-                var result = writer.Stop();
-                var record = new TestRecord { testName = testName, steps = result };
-                if (!Directory.Exists(savePath)) {
-                    Directory.CreateDirectory(savePath);
-                }
-                File.WriteAllText($"{savePath}/{testName}.json", JsonConvert.SerializeObject(record, Formatting.Indented));
-                EditorUtility.DisplayDialog("성공", $"파일이 {savePath}/{testName}.json 위치에 저장되었습니다.", "OK");
-                
-                writer = null;
-                testName = null;
+                StopAndSaveRecord();
                 return;
             }
 
@@ -57,16 +48,42 @@ namespace P1SModule.TestRecorder.Editor {
 함수를 추가하는 방법은 public static 함수에 [PreDesignedFunc] 어트리뷰트를 붙이면 됩니다.", MessageType.Info);
             EditorGUILayout.Space();
             
-            ShowPreDesignedFuncs();
+            DrawOnRecording();
         }
 
-        private void ShowPreDesignedFuncs() {
+        private void DrawNotRecording() {
+            if (GUILayout.Button("기록 시작")) {
+                if (!raycastDetector) raycastDetector = RaycastDetector.CreateOne();
+                writer = new TestRecordWriter(raycastDetector, new SimpleLogWriterEvent());
+                writer.Start();
+            }
+        }
+
+        private void StopAndSaveRecord() {
+            var result = writer.Stop();
+            var record = new TestRecord { testName = testName, steps = result };
+            if (!Directory.Exists(savePath)) {
+                Directory.CreateDirectory(savePath);
+            }
+            File.WriteAllText($"{savePath}/{testName}.json", JsonConvert.SerializeObject(record, Formatting.Indented));
+            EditorUtility.DisplayDialog("성공", $"파일이 {savePath}/{testName}.json 위치에 저장되었습니다.", "OK");
+                
+            writer = null;
+            testName = null;
+        }
+
+        private void DrawOnRecording() {
+            // 사용 가능한 사전지정 함수들을 버튼으로 나열한다.
             preDesignedFuncs ??= GetPreDesignedFuncs();
 
             foreach (var preDesignedFunc in preDesignedFuncs) {
                 if (GUILayout.Button(preDesignedFunc.funcAttr.Comment ?? preDesignedFunc.funcAttr.Key)) {
-                    preDesignedFunc.method?.Invoke(null, null);
-                    writer.AddPreDesignedFunc(preDesignedFunc.funcAttr.Key);
+                    try {
+                        preDesignedFunc.method?.Invoke(null, null);
+                        writer.RecordPreDesignedFunc(preDesignedFunc.funcAttr.Key);
+                    } catch(Exception ex) {
+                        ColoredDebug.Log($"Error invoking method: {ex.Message}", DebugColor.Red);
+                    }
                 }
             }
         }

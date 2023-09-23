@@ -4,32 +4,42 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using Object = UnityEngine.Object;
 
 namespace P1SModule.TestRecorder {
     public class TestRecordPlayer {
-        public bool IsPlaying => TestCompletionSource != null && !TestCompletionSource.Task.Status.IsCompleted();
+        public bool IsPlaying => completionSource != null && !completionSource.Task.Status.IsCompleted();
         private TestInputModule InputModule { get; set; }
+        [CanBeNull] private IPlayerEvent Listener { get; }
 
         private CancellationTokenSource cancellationTokenSource;
         private Dictionary<string, MethodInfo> preDesignedFuncs;
-        private UniTaskCompletionSource<TestReport> TestCompletionSource;
+        private UniTaskCompletionSource<TestReport> completionSource;
+        
+        public TestRecordPlayer([CanBeNull] IPlayerEvent listener) {
+            Listener = listener;
+        }
 
         public void Start(TestRecord record) {
             if (IsPlaying) return;
-            TestCompletionSource = new UniTaskCompletionSource<TestReport>();
+            
+            completionSource = new UniTaskCompletionSource<TestReport>();
+
+            Listener?.OnStart();
             StartInternal(record).Forget();
         }
 
         public UniTask<TestReport> WaitUntilTestEnd() {
-            return TestCompletionSource.Task;
+            return completionSource.Task;
         }
 
-        public void Stop() {
+        public void Abort() {
             DisposeTest();
             cancellationTokenSource.Cancel();
+            Listener?.OnAbort();
         }
 
         private async UniTask StartInternal(TestRecord record) {
@@ -40,18 +50,21 @@ namespace P1SModule.TestRecorder {
             foreach (var step in record.steps) {
                 var stepReport = await ExecuteStepAsync(step);
                 testReport.stepReports.Add(stepReport);
+                Listener?.OnExecuteStep(step, stepReport);
 
                 if (stepReport != StepReport.Pass) {
                     testReport.result = TestResult.Fail;
                     DisposeTest();
-                    TestCompletionSource.TrySetResult(testReport);
+                    completionSource.TrySetResult(testReport);
+                    Listener?.OnEnd(testReport.result);
                     return;
                 }
             }
 
             testReport.result = TestResult.Pass;
             DisposeTest();
-            TestCompletionSource.TrySetResult(testReport);
+            completionSource.TrySetResult(testReport);
+            Listener?.OnEnd(testReport.result);
         }
 
         private void InitTest() {

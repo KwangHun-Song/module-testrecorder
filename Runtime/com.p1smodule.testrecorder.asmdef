@@ -2,11 +2,7 @@
     "name": "com.p1smodule.testrecorder",
     "rootNamespace": "",
     "references": [
-        "com.p1smodule.utility",
-        "UniTask",
-        "com.p1splatform.core",
-        "com.p1splatform.diagnostics",
-        "com.p1smodule.hotkeyview"
+        "UniTask"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
