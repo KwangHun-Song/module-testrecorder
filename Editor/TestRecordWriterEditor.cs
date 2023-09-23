@@ -9,11 +9,11 @@ using UnityEngine;
 
 namespace P1SModule.TestRecorder.Editor {
     public class TestRecordWriterEditor : EditorWindow {
-        private RaycastDetector raycastDetector;
-        private TestRecordWriter writer;
+        private static RaycastDetector raycastDetector;
+        private static TestRecordWriter writer;
         
         private string savePath = "Assets/Resources/TestRecord";
-        private string testName;
+        private static string testName;
         private List<(PreDesignedFuncAttribute funcAttr, MethodInfo method)> preDesignedFuncs;
 
         private void OnGUI() {
@@ -24,6 +24,8 @@ namespace P1SModule.TestRecorder.Editor {
 
             savePath = EditorGUILayout.TextField("파일 저장 위치", savePath);
             testName = EditorGUILayout.TextField("테스트 이름", testName);
+            
+            EditorGUILayout.Space();
 
             if (writer is not { IsRecording: true } && !string.IsNullOrEmpty(testName)) {
                 if (GUILayout.Button("기록 시작")) {
@@ -48,6 +50,12 @@ namespace P1SModule.TestRecorder.Editor {
                 testName = null;
                 return;
             }
+
+            EditorGUILayout.Space();
+            EditorGUILayout.HelpBox(@"미리 지정한 함수들을 실행할 수 있습니다.
+여기서 실행된 함수들은 레코드 플레이어가 그대로 실행합니다.
+함수를 추가하는 방법은 public static 함수에 [PreDesignedFunc] 어트리뷰트를 붙이면 됩니다.", MessageType.Info);
+            EditorGUILayout.Space();
             
             ShowPreDesignedFuncs();
         }
