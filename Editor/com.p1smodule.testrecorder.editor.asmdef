@@ -2,7 +2,8 @@
     "name": "com.p1smodule.testrecorder.editor",
     "rootNamespace": "",
     "references": [
-        "com.p1smodule.testrecorder"
+        "com.p1smodule.testrecorder",
+        "UniTask"
     ],
     "includePlatforms": [
         "Editor"
