@@ -64,6 +64,8 @@ namespace P1SModule.TestRecorder.Editor {
             }
         }
 
+        #region PlayerTab
+
         private async UniTask WaitAndSaveReportAsync() {
             var result = await player.WaitUntilTestEnd();
             var sb = new StringBuilder();
@@ -79,6 +81,8 @@ namespace P1SModule.TestRecorder.Editor {
 
             EditorUtility.DisplayDialog("완료", $"플레이가 완료되었습니다. 결과는 {savePath}/{result.testName}_result.txt 에 저장되었습니다.", "OK");
         }
+
+        #endregion
 
         private void DrawWriterTab() {
             testName = EditorGUILayout.TextField("테스트 이름", testName);
