@@ -14,7 +14,7 @@ namespace P1SModule.TestRecorder.Editor {
         
         private string savePath = "Assets/Resources/TestRecord";
         private string testName;
-        private List<(string funcName, MethodInfo method)> preDesignedFuncs;
+        private List<(PreDesignedFuncAttribute funcAttr, MethodInfo method)> preDesignedFuncs;
 
         private void OnGUI() {
             if (Application.isPlaying == false) {
@@ -25,7 +25,7 @@ namespace P1SModule.TestRecorder.Editor {
             savePath = EditorGUILayout.TextField("파일 저장 위치", savePath);
             testName = EditorGUILayout.TextField("테스트 이름", testName);
 
-            if (writer is not { IsRecording: true }) {
+            if (writer is not { IsRecording: true } && !string.IsNullOrEmpty(testName)) {
                 if (GUILayout.Button("기록 시작")) {
                     if (!raycastDetector) raycastDetector = RaycastDetector.CreateOne();
                     writer = new TestRecordWriter(raycastDetector);
@@ -48,7 +48,7 @@ namespace P1SModule.TestRecorder.Editor {
                 testName = null;
                 return;
             }
-                
+            
             ShowPreDesignedFuncs();
         }
 
@@ -56,32 +56,24 @@ namespace P1SModule.TestRecorder.Editor {
             preDesignedFuncs ??= GetPreDesignedFuncs();
 
             foreach (var preDesignedFunc in preDesignedFuncs) {
-                if (GUILayout.Button(preDesignedFunc.funcName)) {
+                if (GUILayout.Button(preDesignedFunc.funcAttr.Comment ?? preDesignedFunc.funcAttr.Key)) {
                     preDesignedFunc.method?.Invoke(null, null);
+                    writer.AddPreDesignedFunc(preDesignedFunc.funcAttr.Key);
                 }
             }
         }
 
-        private List<(string, MethodInfo)> GetPreDesignedFuncs() {
-            var funcs = new List<(string, MethodInfo)>();
-            
-            var allTypes = AppDomain.CurrentDomain.GetAssemblies().SelectMany(assembly => assembly.GetTypes());
-            foreach (var type in allTypes) {
-                if (type.IsClass == false) continue;
-            
-                foreach (var methodInfo in type.GetRuntimeMethods()) {
-                    if (methodInfo.IsStatic == false) continue;
-                
-                    var attribute = methodInfo.GetCustomAttribute<TestFuncAttribute>();
-                    if (attribute == null) continue;
-                    
-                    funcs.Add((attribute.FuncName, methodInfo));
-                }
-            }
-
-            return funcs;
+        private List<(PreDesignedFuncAttribute, MethodInfo)> GetPreDesignedFuncs() {
+            // 리플렉션으로 PreDesignedFunc 어트리뷰트를 가진 함수들을 긁어와 저장한다.
+            return AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(assembly => assembly.GetTypes())
+                .Where(type => type.IsClass)
+                .SelectMany(type => type.GetRuntimeMethods())
+                .Where(method => method.IsStatic)
+                .Select(method => (Attribute: method.GetCustomAttribute<PreDesignedFuncAttribute>(), MethodInfo: method))
+                .Where(pair => pair.Attribute != null)
+                .ToList();
         }
-
 
         #region EditowWindow
 

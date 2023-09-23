@@ -1,8 +1,6 @@
 using System.Collections.Generic;
-using System.IO;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
-using Newtonsoft.Json;
 using P1SPlatform.Diagnostics;
 using UnityEngine;
 
@@ -44,7 +42,9 @@ namespace P1SModule.TestRecorder {
             CompletionSource = new UniTaskCompletionSource<List<TestRecordStep>>();
         }
 
-        public UniTask WaitUntilTestEnd() => CompletionSource?.Task ?? UniTask.CompletedTask;
+        public UniTask<List<TestRecordStep>> WaitUntilTestEnd() {
+            return CompletionSource?.Task ?? UniTask.FromResult<List<TestRecordStep>>(null);
+        }
 
         public List<TestRecordStep> Stop() {
             if (IsRecording == false) return null;
