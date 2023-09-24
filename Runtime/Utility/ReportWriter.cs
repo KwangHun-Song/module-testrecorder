@@ -8,8 +8,8 @@ namespace P1SModule.TestRecorder {
         public static string GetReportString(TestReport report) {
             var sb = new StringBuilder();
             sb.AppendLine($"테스트 이름 : {report.testName}");
-            sb.AppendLine($"테스트 결과 : {report.result}");
             sb.AppendLine($"테스트 설명 : {report.description}");
+            sb.AppendLine($"테스트 결과 : {report.result}");
             sb.AppendLine($"테스트 진행과정 :");
             foreach (var stepReport in report.stepReports) {
                 if (stepReport.result == StepResult.Execute) {
@@ -17,7 +17,7 @@ namespace P1SModule.TestRecorder {
                 } else if (string.IsNullOrEmpty(stepReport.comment)) {
                     sb.AppendLine($"\t\t{stepReport.result}");
                 } else {
-                    sb.AppendLine($"\t{stepReport.result} :: {stepReport.comment}");
+                    sb.AppendLine($"\t\t{stepReport.result} :: {stepReport.comment}");
                 }
             }
 

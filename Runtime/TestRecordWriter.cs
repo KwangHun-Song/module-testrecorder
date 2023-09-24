@@ -34,7 +34,7 @@ namespace P1SModule.TestRecorder {
                 return;
             }
 
-            lastInputSecond = Time.time; // 시간 기록을 초기화한다.
+            lastInputSecond = Time.realtimeSinceStartup; // 시간 기록을 초기화한다.
             Records.Clear();
 
             Listener?.OnStart();
@@ -64,7 +64,7 @@ namespace P1SModule.TestRecorder {
 
         // 이전 이벤트로부터 시간을 계산하고, 마지막 이벤트 시간을 갱신한다.
         protected virtual float GetElapsedTimeAndRenew() {
-            var currentTime = Time.time;
+            var currentTime = Time.realtimeSinceStartup;
             var elapsed = currentTime - lastInputSecond;
             lastInputSecond = currentTime;
             return elapsed;

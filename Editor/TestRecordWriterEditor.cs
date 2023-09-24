@@ -106,7 +106,7 @@ namespace P1SModule.TestRecorder.Editor {
 
         private void StopAndSaveRecord() {
             var result = writer.Stop();
-            var record = new TestRecord { testName = testName, steps = result };
+            var record = new TestRecord { testName = testName, testDescription = testDescription, steps = result };
             if (!Directory.Exists(savePath)) {
                 Directory.CreateDirectory(savePath);
             }
