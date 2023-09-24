@@ -53,7 +53,7 @@ namespace P1SModule.TestRecorder {
                 testReport.stepReports.Add(stepReport);
                 Listener?.OnExecuteStep(step, stepReport);
 
-                if (stepReport.result != StepResult.Pass) {
+                if (stepReport is { result: not StepResult.Pass }) {
                     testReport.result = TestResult.Fail;
                     DisposeTest();
                     completionSource.TrySetResult(testReport);

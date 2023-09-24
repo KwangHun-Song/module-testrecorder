@@ -34,7 +34,7 @@ namespace P1SModule.TestRecorder {
                 return;
             }
 
-            lastInputSecond = Time.realtimeSinceStartup; // 시간 기록을 초기화한다.
+            RenewLastInputTime();
             Records.Clear();
 
             Listener?.OnStart();
@@ -62,11 +62,15 @@ namespace P1SModule.TestRecorder {
             });
         }
 
+        public void RenewLastInputTime() {
+            lastInputSecond = Time.realtimeSinceStartup;
+        }
+
         // 이전 이벤트로부터 시간을 계산하고, 마지막 이벤트 시간을 갱신한다.
-        protected virtual float GetElapsedTimeAndRenew() {
+        private float GetElapsedTimeAndRenew() {
             var currentTime = Time.realtimeSinceStartup;
             var elapsed = currentTime - lastInputSecond;
-            lastInputSecond = currentTime;
+            RenewLastInputTime();
             return elapsed;
         }
 
@@ -75,7 +79,7 @@ namespace P1SModule.TestRecorder {
         /// <summary>
         /// RaycastDetector에 등록한 이벤트에서 레이케스팅으로 만난 게임오브젝트를 받아온다.
         /// </summary>
-        public virtual void GetHit(GameObject gameObject) {
+        public void GetHit(GameObject gameObject) {
             var time = GetElapsedTimeAndRenew();
             var path = gameObject.GetFullPath();
             Listener?.OnClick(path);

@@ -1,7 +1,7 @@
 namespace P1SModule.TestRecorder {
     public enum StepResult { Pass, Execute, Fail, Aborted }
 
-    public struct StepReport {
+    public class StepReport {
         public readonly StepResult result;
         public readonly string comment;
         public StepReport(StepResult result, string comment = null) {
