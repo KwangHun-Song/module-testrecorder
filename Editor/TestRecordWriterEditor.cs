@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
 using UnityEditor;
@@ -20,6 +19,7 @@ namespace P1SModule.TestRecorder.Editor {
         
         private string savePath = "Assets/Resources/TestRecord";
         private string testName;
+        private string testDescription;
         private Tab currentTab = Tab.Writer;
 
         private void OnGUI() {
@@ -41,51 +41,9 @@ namespace P1SModule.TestRecorder.Editor {
             }
         }
 
-        private void DrawPlayerTab() {
-            // savePath에서 "*.json" 파일 검색
-            var jsonFiles = Directory.GetFiles(savePath, "*.json");
-            if (jsonFiles.Length == 0) {
-                EditorGUILayout.LabelField("No json files found.");
-                return;
-            }
-
-            if (player is { IsPlaying: true }) {
-                EditorGUILayout.LabelField("플레이어 실행중");
-            }
-
-            // 파일 이름들을 읽어와서 foreach 돌면서 GUILayout.Button으로 분기
-            foreach (var filePath in jsonFiles) {
-                var fileName = Path.GetFileNameWithoutExtension(filePath);
-                if (GUILayout.Button(fileName)) {
-                    player ??= new TestRecordPlayer(new SimpleLogPlayerEvent());
-                    player.Start(JsonConvert.DeserializeObject<TestRecord>(File.ReadAllText($"{savePath}/{fileName}.json")));
-                    WaitAndSaveReportAsync().Forget();
-                }
-            }
-        }
-
-        #region PlayerTab
-
-        private async UniTask WaitAndSaveReportAsync() {
-            var result = await player.WaitUntilTestEnd();
-            var sb = new StringBuilder();
-            sb.AppendLine($"테스트 이름 : {result.testName}");
-            sb.AppendLine($"테스트 결과 : {result.result}");
-            sb.AppendLine($"테스트 진행과정 :");
-            foreach (var stepReport in result.stepReports) {
-                sb.AppendLine($"\t{stepReport.result} >> {stepReport.comment}");
-            }
-            
-            File.WriteAllText($"{savePath}/{result.testName}_result.txt", sb.ToString());
-            player = null;
-
-            EditorUtility.DisplayDialog("완료", $"플레이가 완료되었습니다. 결과는 {savePath}/{result.testName}_result.txt 에 저장되었습니다.", "OK");
-        }
-
-        #endregion
-
         private void DrawWriterTab() {
             testName = EditorGUILayout.TextField("테스트 이름", testName);
+            testDescription = EditorGUILayout.TextField("테스트 설명", testDescription);
             
             EditorGUILayout.Space();
 
@@ -111,6 +69,29 @@ namespace P1SModule.TestRecorder.Editor {
             EditorGUILayout.Space();
             
             DrawOnRecording();
+        }
+
+        private void DrawPlayerTab() {
+            // savePath에서 "*.json" 파일 검색
+            var jsonFiles = Directory.GetFiles(savePath, "*.json");
+            if (jsonFiles.Length == 0) {
+                EditorGUILayout.LabelField("No json files found.");
+                return;
+            }
+
+            if (player is { IsPlaying: true }) {
+                EditorGUILayout.LabelField("플레이어 실행중");
+            }
+
+            // 파일 이름들을 읽어와서 foreach 돌면서 GUILayout.Button으로 분기
+            foreach (var filePath in jsonFiles) {
+                var fileName = Path.GetFileNameWithoutExtension(filePath);
+                if (GUILayout.Button(fileName)) {
+                    player ??= new TestRecordPlayer(new SimpleLogPlayerEvent());
+                    player.Start(JsonConvert.DeserializeObject<TestRecord>(File.ReadAllText($"{savePath}/{fileName}.json")));
+                    WaitAndSaveReportAsync().Forget();
+                }
+            }
         }
 
         #region WriterTab
@@ -162,6 +143,18 @@ namespace P1SModule.TestRecorder.Editor {
                 .Select(method => (Attribute: method.GetCustomAttribute<PreDesignedFuncAttribute>(), MethodInfo: method))
                 .Where(pair => pair.Attribute != null)
                 .ToList();
+        }
+
+        #endregion
+
+        #region PlayerTab
+
+        private async UniTask WaitAndSaveReportAsync() {
+            var report = await player.WaitUntilTestEnd();
+            File.WriteAllText($"{savePath}/{report.testName}_result.txt", ReportWriter.GetReportString(report));
+            player = null;
+
+            EditorUtility.DisplayDialog("완료", $"플레이가 완료되었습니다. 결과는 {savePath}/{report.testName}_result.txt 에 저장되었습니다.", "OK");
         }
 
         #endregion

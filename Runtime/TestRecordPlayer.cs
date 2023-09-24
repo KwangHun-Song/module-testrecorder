@@ -43,16 +43,17 @@ namespace P1SModule.TestRecorder {
         }
 
         private async UniTask StartInternal(TestRecord record) {
-            var testReport = new TestReport(record.testName);
+            var testReport = new TestReport(record.testName, record.testDescription);
 
             InitTest();
 
             foreach (var step in record.steps) {
+                testReport.stepReports.Add(new StepReport(StepResult.Execute, step.ToString()));
                 var stepReport = await ExecuteStepAsync(step);
                 testReport.stepReports.Add(stepReport);
                 Listener?.OnExecuteStep(step, stepReport);
 
-                if (stepReport != StepReport.Pass) {
+                if (stepReport.result != StepResult.Pass) {
                     testReport.result = TestResult.Fail;
                     DisposeTest();
                     completionSource.TrySetResult(testReport);
